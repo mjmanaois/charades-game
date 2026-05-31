@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Online Charades</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Online Charades</h1>
+
+<div id="menu">
+    <button id="createBtn">Create Room</button>
+
+    <input id="roomInput"
+           placeholder="Room Code">
+
+    <button id="joinBtn">
+        Join Room
+    </button>
+</div>
+
+<h2 id="roomDisplay"></h2>
+
+<h3 id="role"></h3>
+
+<input
+    id="guessInput"
+    placeholder="Type answer">
+
+<button id="guessBtn">
+    Guess
+</button>
+
+<canvas id="canvas"
+        width="800"
+        height="500">
+</canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
