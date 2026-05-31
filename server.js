@@ -6,148 +6,78 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Serve frontend
 app.use(express.static("public"));
 
-const rooms = {};
+// Store players
+let players = [];
 
+// Word list for charades
 const words = [
   "apple",
-  "house",
-  "dog",
-  "cat",
-  "car",
-  "tree",
-  "banana",
-  "computer",
-  "book",
-  "phone"
+  "bicycle",
+  "teacher",
+  "dancing",
+  "basketball",
+  "airplane",
+  "guitar",
+  "phone",
+  "sleeping",
+  "running"
 ];
 
-function randomWord() {
-  return words[Math.floor(Math.random() * words.length)];
-}
-
+// ----------------------
+// Socket.io connection
+// ----------------------
 io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
 
-  socket.on("createRoom", () => {
+  // Join game
+  socket.on("joinGame", (name) => {
+    socket.username = name;
 
-    const room = Math.random().toString(36).substring(2, 7);
+    players.push(name);
 
-    rooms[room] = {
-      players: [socket.id],
-      turn: 0,
-      word: randomWord(),
-      scores: {}
-    };
-
-    rooms[room].scores[socket.id] = 0;
-
-    socket.join(room);
-
-    socket.emit("roomCreated", room);
+    io.emit("playersUpdate", players);
+    io.emit("chatMessage", `🎉 ${name} joined the game`);
   });
 
-  socket.on("joinRoom", room => {
-
-    if (!rooms[room]) {
-      socket.emit("errorMsg", "Room not found");
-      return;
-    }
-
-    if (rooms[room].players.length >= 2) {
-      socket.emit("errorMsg", "Room full");
-      return;
-    }
-
-    rooms[room].players.push(socket.id);
-    rooms[room].scores[socket.id] = 0;
-
-    socket.join(room);
-
-    io.to(room).emit("gameStart", {
-      players: rooms[room].players
-    });
-
-    startRound(room);
+  // Chat system
+  socket.on("chatMessage", (msg) => {
+    io.emit("chatMessage", msg);
   });
 
-  socket.on("draw", data => {
-    socket.to(data.room).emit("draw", data);
+  // Get random word
+  socket.on("getWord", () => {
+    const word = words[Math.floor(Math.random() * words.length)];
+
+    // send only to requester (important for charades)
+    socket.emit("newWord", word);
   });
 
-  socket.on("guess", ({ room, guess }) => {
-
-    const currentRoom = rooms[room];
-
-    if (!currentRoom) return;
-
-    if (
-      guess.toLowerCase() ===
-      currentRoom.word.toLowerCase()
-    ) {
-
-      io.to(room).emit("correctGuess", guess);
-
-      const guesser =
-        currentRoom.players[
-          (currentRoom.turn + 1) % 2
-        ];
-
-      currentRoom.scores[guesser]++;
-
-      currentRoom.turn =
-        (currentRoom.turn + 1) % 2;
-
-      currentRoom.word = randomWord();
-
-      startRound(room);
-    }
+  // Start game
+  socket.on("startGame", () => {
+    io.emit("chatMessage", "🎮 Game has started!");
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
+    if (socket.username) {
+      players = players.filter((p) => p !== socket.username);
 
-    for (const room in rooms) {
-
-      if (
-        rooms[room].players.includes(socket.id)
-      ) {
-
-        io.to(room).emit(
-          "errorMsg",
-          "Player disconnected"
-        );
-
-        delete rooms[room];
-      }
+      io.emit("playersUpdate", players);
+      io.emit("chatMessage", `❌ ${socket.username} left the game`);
     }
+
+    console.log("User disconnected:", socket.id);
   });
 });
 
-function startRound(room) {
-
-  const currentRoom = rooms[room];
-
-  const drawer =
-    currentRoom.players[currentRoom.turn];
-
-  const guesser =
-    currentRoom.players[
-      (currentRoom.turn + 1) % 2
-    ];
-
-  io.to(drawer).emit("yourWord",
-    currentRoom.word
-  );
-
-  io.to(guesser).emit("guessMode");
-
-  io.to(room).emit("scoreUpdate",
-    currentRoom.scores
-  );
-}
-
+// ----------------------
+// Port setup (IMPORTANT for Render)
+// ----------------------
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
