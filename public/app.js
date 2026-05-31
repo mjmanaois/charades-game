@@ -174,6 +174,17 @@ socket.on("systemMessage", (msg) => {
   chat.innerHTML += `<div>${msg}</div>`;
 });
 
+socket.on("gameRole", (data) => {
+  const roleBox = document.getElementById("roleBox");
+  roleBox.innerText = data.message;
+
+  if (data.role === "drawer") {
+    document.getElementById("wordBox").innerText = "Word: " + data.word;
+  } else {
+    document.getElementById("wordBox").innerText = "Guess the word!";
+  }
+});
+
 /**
  * PLAYER LIST
  */
