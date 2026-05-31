@@ -43,10 +43,7 @@ function getRandomWord() {
  * UPDATE PLAYER LIST
  */
 function updatePlayers() {
-  io.emit(
-    "playerList",
-    players.map((p) => ({ name: p.name }))
-  );
+  io.emit("playerList", players.map(p => ({ name: p.name })));
 }
 
 /**
@@ -62,19 +59,24 @@ function startRound() {
 
   io.emit("clearCanvas");
 
-  // Drawer ONLY gets the word
-  drawer.socket.emit("yourTurn", {
+  /**
+   * IMPORTANT FIX:
+   * DO NOT alert word
+   * SEND TO UI instead
+   */
+
+  drawer.socket.emit("gameRole", {
     role: "drawer",
-    word: currentWord
+    word: currentWord,
+    message: "You are drawing"
   });
 
-  // Guesser gets only instruction
-  guesser.socket.emit("yourTurn", {
+  guesser.socket.emit("gameRole", {
     role: "guesser",
-    message: "Guess the word from the drawing!"
+    message: "Guess the word from the drawing"
   });
 
-  io.emit("systemMessage", `🎨 ${drawer.name} is drawing!`);
+  io.emit("systemMessage", `🎨 ${drawer.name} is drawing now!`);
 }
 
 /**
@@ -89,7 +91,7 @@ function nextTurn() {
  * SOCKET CONNECTION
  */
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("Connected:", socket.id);
 
   /**
    * JOIN GAME
@@ -97,12 +99,10 @@ io.on("connection", (socket) => {
   socket.on("joinGame", (name) => {
     if (!name) return;
 
-    // prevent duplicate entries (refresh bug fix)
-    const existing = players.find((p) => p.id === socket.id);
-    if (existing) return;
+    if (players.find(p => p.id === socket.id)) return;
 
     if (players.length >= 2) {
-      socket.emit("systemMessage", "Game is full (2 players max)");
+      socket.emit("systemMessage", "Game is full (2 players only)");
       return;
     }
 
@@ -114,12 +114,8 @@ io.on("connection", (socket) => {
 
     updatePlayers();
 
-    io.emit(
-      "systemMessage",
-      `${name} joined (${players.length}/2)`
-    );
+    io.emit("systemMessage", `${name} joined the game`);
 
-    // auto start when 2 players ready
     if (players.length === 2 && !gameStarted) {
       gameStarted = true;
       startRound();
@@ -127,19 +123,19 @@ io.on("connection", (socket) => {
   });
 
   /**
-   * START GAME MANUAL (optional button)
+   * START GAME MANUAL
    */
   socket.on("startGame", () => {
     if (players.length < 2) return;
-
     gameStarted = true;
     startRound();
   });
 
   /**
-   * DRAWING SYNC
+   * DRAW SYNC (FIXED)
    */
   socket.on("draw", (data) => {
+    // send to everyone except drawer
     socket.broadcast.emit("draw", data);
   });
 
@@ -153,7 +149,7 @@ io.on("connection", (socket) => {
     const normalizedWord = currentWord.toLowerCase().trim();
 
     if (normalizedGuess === normalizedWord) {
-      const winner = players.find((p) => p.id === socket.id);
+      const winner = players.find(p => p.id === socket.id);
 
       io.emit("systemMessage", `🎉 ${winner.name} guessed correctly!`);
 
@@ -169,13 +165,13 @@ io.on("connection", (socket) => {
    * DISCONNECT FIX
    */
   socket.on("disconnect", () => {
-    const index = players.findIndex((p) => p.id === socket.id);
+    const index = players.findIndex(p => p.id === socket.id);
 
     if (index !== -1) {
       const name = players[index].name;
       players.splice(index, 1);
 
-      io.emit("systemMessage", `${name} left the game`);
+      io.emit("systemMessage", `${name} left`);
       updatePlayers();
     }
 
