@@ -29,9 +29,9 @@ const words = [
 ];
 
 /**
- * UTILITY: pick random word
+ * RANDOM WORD
  */
-function getRandomWord() {
+function getWord() {
   return words[Math.floor(Math.random() * words.length)];
 }
 
@@ -39,13 +39,13 @@ function getRandomWord() {
  * START GAME
  */
 function startGame() {
-  if (players.length < 2) return;
+  if (players.length !== 2) return;
 
   gameStarted = true;
-  currentWord = getRandomWord();
+  currentWord = getWord();
 
-  const drawer = players[drawerIndex % players.length];
-  const guesser = players[(drawerIndex + 1) % players.length];
+  const drawer = players[drawerIndex % 2];
+  const guesser = players[(drawerIndex + 1) % 2];
 
   io.to(drawer.id).emit("role", {
     role: "drawer",
@@ -64,10 +64,10 @@ function startGame() {
  */
 function nextRound() {
   drawerIndex++;
-  currentWord = getRandomWord();
+  currentWord = getWord();
 
-  const drawer = players[drawerIndex % players.length];
-  const guesser = players[(drawerIndex + 1) % players.length];
+  const drawer = players[drawerIndex % 2];
+  const guesser = players[(drawerIndex + 1) % 2];
 
   io.to(drawer.id).emit("role", {
     role: "drawer",
@@ -85,7 +85,7 @@ function nextRound() {
  * SOCKET CONNECTION
  */
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("Connected:", socket.id);
 
   socket.on("joinGame", () => {
     if (players.length >= 2) {
@@ -109,8 +109,10 @@ io.on("connection", (socket) => {
     if (!gameStarted) return;
 
     if (guess.toLowerCase() === currentWord.toLowerCase()) {
-      io.emit("gameMessage", `Correct guess: ${currentWord}`);
+      io.emit("gameMessage", `Correct! The word was ${currentWord}`);
       nextRound();
+    } else {
+      socket.emit("gameMessage", "Wrong guess!");
     }
   });
 
@@ -119,6 +121,7 @@ io.on("connection", (socket) => {
     readyPlayers.delete(socket.id);
 
     gameStarted = false;
+    drawerIndex = 0;
 
     io.emit("playerCount", players.length);
     io.emit("gameMessage", "A player left. Game reset.");
