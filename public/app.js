@@ -1,97 +1,86 @@
 const socket = io();
 
-let room = "";
-let drawing = false;
-let isDrawer = false;
+// DOM elements
+const wordBox = document.getElementById("word");
+const chatBox = document.getElementById("chat");
+const playersBox = document.getElementById("players");
+const msgInput = document.getElementById("msg");
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// --------------------
+// Join game automatically
+// --------------------
+let username = prompt("Enter your name:");
+if (!username) username = "Player";
 
-// Buttons
-document.getElementById("createBtn").onclick = () => {
-  socket.emit("createRoom");
-};
+socket.emit("joinGame", username);
 
-document.getElementById("joinBtn").onclick = () => {
-  room = document.getElementById("roomInput").value.trim();
-  if (!room) return alert("Enter a room code");
-
-  socket.emit("joinRoom", room);
-};
-
-// Room created
-socket.on("roomCreated", (code) => {
-  room = code;
-  document.getElementById("roomDisplay").innerText = "Room: " + code;
+// --------------------
+// Receive word from server
+// --------------------
+socket.on("newWord", (word) => {
+  wordBox.textContent = word;
 });
 
-// You are drawer
-socket.on("yourWord", (word) => {
-  isDrawer = true;
-  document.getElementById("role").innerText = "Draw: " + word;
-});
+// --------------------
+// Player list update
+// --------------------
+socket.on("playersUpdate", (players) => {
+  playersBox.innerHTML = "";
 
-// You are guesser
-socket.on("guessMode", () => {
-  isDrawer = false;
-  document.getElementById("role").innerText = "Guess the drawing";
-});
-
-// Drawing start
-canvas.addEventListener("mousedown", () => {
-  if (isDrawer) drawing = true;
-});
-
-canvas.addEventListener("mouseup", () => {
-  drawing = false;
-});
-
-canvas.addEventListener("mouseleave", () => {
-  drawing = false;
-});
-
-// Draw on canvas
-canvas.addEventListener("mousemove", (e) => {
-  if (!drawing || !isDrawer) return;
-
-  const x = e.offsetX;
-  const y = e.offsetY;
-
-  ctx.fillRect(x, y, 3, 3);
-
-  socket.emit("draw", {
-    room,
-    x,
-    y,
+  players.forEach((p) => {
+    const div = document.createElement("div");
+    div.className = "player";
+    div.textContent = p;
+    playersBox.appendChild(div);
   });
 });
 
-// Receive drawing
-socket.on("draw", (data) => {
-  ctx.fillRect(data.x, data.y, 3, 3);
+// --------------------
+// Chat messages
+// --------------------
+socket.on("chatMessage", (msg) => {
+  addMessage(msg);
 });
 
-// Guess
-document.getElementById("guessBtn").onclick = () => {
-  const guess = document.getElementById("guessInput").value.trim();
-  if (!guess) return;
+// --------------------
+// Send message
+// --------------------
+function sendMessage() {
+  const msg = msgInput.value.trim();
+  if (!msg) return;
 
-  socket.emit("guess", {
-    room,
-    guess,
-  });
+  socket.emit("chatMessage", `${username}: ${msg}`);
+  msgInput.value = "";
+}
 
-  document.getElementById("guessInput").value = "";
-};
+// --------------------
+// Add message to chat UI
+// --------------------
+function addMessage(msg) {
+  const div = document.createElement("div");
+  div.className = "chat-message";
+  div.textContent = msg;
 
-// Correct guess
-socket.on("correctGuess", (word) => {
-  alert("Correct! Word was " + word);
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight; // mobile-friendly scroll
+}
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
+// --------------------
+// Game actions
+// --------------------
+function getWord() {
+  socket.emit("getWord");
+}
 
-// Errors
-socket.on("errorMsg", (msg) => {
-  alert(msg);
+function startGame() {
+  socket.emit("startGame");
+}
+
+// --------------------
+// Enter key support
+// --------------------
+msgInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    sendMessage();
+  }
 });
