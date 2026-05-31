@@ -157,10 +157,12 @@ socket.on("clearCanvas", () => {
  * TURN SYSTEM
  */
 socket.on("yourTurn", (data) => {
+  const wordBox = document.getElementById("wordBox");
+
   if (data.role === "drawer") {
-    alert("You are the DRAWER: " + data.word);
+    wordBox.innerText = "🎨 Draw this word: " + data.word;
   } else {
-    alert(data.message || "You are the GUESSER");
+    wordBox.innerText = "👀 " + data.message;
   }
 });
 
