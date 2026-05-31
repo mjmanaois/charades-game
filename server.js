@@ -8,9 +8,6 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-/**
- * GAME STATE
- */
 let players = [];
 let gameActive = false;
 
@@ -19,114 +16,75 @@ let currentWord = "";
 let drawingData = [];
 
 const words = [
-  "apple",
-  "car",
-  "house",
-  "dog",
-  "bicycle",
-  "tree",
-  "phone",
-  "pizza",
-  "computer",
-  "fish"
+  "apple", "car", "house", "dog", "bicycle",
+  "tree", "phone", "pizza", "computer", "fish"
 ];
 
 /**
- * START ROUND (random drawer)
+ * START ROUND
  */
 function startRound() {
   if (players.length < 2) {
-    io.emit("systemMessage", "Need at least 2 players to start.");
+    io.emit("systemMessage", "Need at least 2 players.");
     return;
   }
 
   drawingData = [];
 
-  // pick random drawer
   currentDrawer = players[Math.floor(Math.random() * players.length)];
-
-  // pick word
   currentWord = words[Math.floor(Math.random() * words.length)];
 
   io.emit("clearCanvas");
 
-  // send word ONLY to drawer
   io.to(currentDrawer.id).emit("yourTurn", {
     word: currentWord
   });
 
-  // notify guessers
   players.forEach(p => {
     if (p.id !== currentDrawer.id) {
       io.to(p.id).emit("guessTurn", {
-        message: `${currentDrawer.name} is drawing. Guess the word!`
+        message: `${currentDrawer.name} is drawing. Guess!`
       });
     }
   });
 
-  io.emit(
-    "systemMessage",
-    `🎨 ${currentDrawer.name} is now drawing!`
-  );
-
+  io.emit("systemMessage", `🎨 ${currentDrawer.name} is drawing!`);
   gameActive = true;
 }
 
 /**
- * SOCKET CONNECTION
+ * SOCKET.IO
  */
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
 
-  /**
-   * JOIN GAME
-   */
   socket.on("joinGame", (name) => {
     players.push({ id: socket.id, name });
-
-    io.emit("systemMessage", `${name} joined the game`);
-
     io.emit("playerList", players);
+    io.emit("systemMessage", `${name} joined`);
   });
 
-  /**
-   * START ROUND BUTTON CLICKED
-   */
   socket.on("startRound", () => {
     if (gameActive) {
-      socket.emit("systemMessage", "Round already in progress!");
+      socket.emit("systemMessage", "Round already running");
       return;
     }
-
     startRound();
   });
 
-  /**
-   * DRAW EVENT (broadcast to all INCLUDING guessers)
-   */
   socket.on("draw", (data) => {
     drawingData.push(data);
     socket.broadcast.emit("draw", data);
   });
 
-  /**
-   * SYNC CANVAS FOR NEW PLAYERS
-   */
   socket.on("requestCanvasSync", () => {
     socket.emit("syncCanvas", drawingData);
   });
 
-  /**
-   * GUESS CHECK
-   */
   socket.on("guess", (text) => {
     if (!gameActive) return;
 
     if (text.toLowerCase() === currentWord.toLowerCase()) {
-      io.emit(
-        "systemMessage",
-        `🎉 ${text} is correct! The word was "${currentWord}"`
-      );
+      io.emit("systemMessage", `🎉 Correct! Word was ${currentWord}`);
 
       gameActive = false;
       currentDrawer = null;
@@ -134,35 +92,21 @@ io.on("connection", (socket) => {
 
       io.emit("clearCanvas");
     } else {
-      socket.emit("systemMessage", "❌ Wrong guess!");
+      socket.emit("systemMessage", "❌ Wrong guess");
     }
   });
 
-  /**
-   * DISCONNECT
-   */
   socket.on("disconnect", () => {
     players = players.filter(p => p.id !== socket.id);
-
     io.emit("playerList", players);
 
-    io.emit("systemMessage", "A player left");
-
-    // if drawer left, end round
-    if (currentDrawer && socket.id === currentDrawer.id) {
+    if (currentDrawer?.id === socket.id) {
       gameActive = false;
-      currentDrawer = null;
-      currentWord = "";
       io.emit("clearCanvas");
       io.emit("systemMessage", "Drawer left. Round ended.");
     }
   });
 });
 
-/**
- * SERVER START
- */
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log("Server running on", PORT));
