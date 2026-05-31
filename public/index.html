@@ -1,20 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Charades Game</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2-Player Charades</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
     body {
       font-family: Arial;
-      margin: 0;
       text-align: center;
-    }
-
-    #container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
 
     canvas {
@@ -22,57 +15,42 @@
       touch-action: none;
     }
 
-    #players {
-      margin: 10px;
-    }
-
     #chat {
-      height: 100px;
+      height: 120px;
       overflow-y: auto;
       border: 1px solid #ccc;
-      width: 90%;
       margin: 10px auto;
+      width: 90%;
     }
 
-    input {
-      padding: 8px;
-      width: 70%;
-    }
-
-    button {
+    input, button {
       padding: 10px;
       margin: 5px;
-    }
-
-    @media (max-width: 600px) {
-      canvas {
-        width: 95%;
-        height: 300px;
-      }
     }
   </style>
 </head>
 
 <body>
 
-<h2>🎮 Charades Game</h2>
+<h2>🎮 2-Player Charades</h2>
 
-<div id="container">
+<input id="nameInput" placeholder="Enter name">
+<button onclick="joinGame()">Join</button>
 
-  <input id="nameInput" placeholder="Enter name">
-  <button onclick="joinGame()">Join Game</button>
+<br>
 
-  <div id="players"></div>
+<button onclick="startGame()">Start Game</button>
 
-  <button id="startBtn">Start Round</button>
+<canvas id="canvas"></canvas>
 
-  <canvas id="canvas"></canvas>
+<br>
 
-  <input id="guessInput" placeholder="Type your guess">
-  <button onclick="sendGuess()">Guess</button>
+<input id="guessInput" placeholder="Type guess">
+<button onclick="sendGuess()">Guess</button>
 
-  <div id="chat"></div>
-</div>
+<div id="chat"></div>
+
+<div id="players"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
