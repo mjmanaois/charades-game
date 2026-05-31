@@ -1,41 +1,47 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Online Charades</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charades Game</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<h1>Online Charades</h1>
+<header>
+  🎭 Charades Game
+</header>
 
-<div id="menu">
-    <button id="createBtn">Create Room</button>
+<div class="container">
 
-    <input id="roomInput"
-           placeholder="Room Code">
+  <!-- Word Section -->
+  <div class="card">
+    <div class="word-box" id="word">Waiting for word...</div>
 
-    <button id="joinBtn">
-        Join Room
-    </button>
+    <button class="btn-primary" onclick="getWord()">Get Word</button>
+    <button class="btn-secondary" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- Players -->
+  <div class="card">
+    <h3>Players</h3>
+    <div id="players" class="players"></div>
+  </div>
+
+  <!-- Chat -->
+  <div class="card">
+    <h3>Chat</h3>
+
+    <div id="chat" class="chat-box"></div>
+
+    <input id="msg" placeholder="Type message..." />
+    <button class="btn-secondary" onclick="sendMessage()">Send</button>
+  </div>
+
 </div>
 
-<h2 id="roomDisplay"></h2>
-
-<h3 id="role"></h3>
-
-<input
-    id="guessInput"
-    placeholder="Type answer">
-
-<button id="guessBtn">
-    Guess
-</button>
-
-<canvas id="canvas"
-        width="800"
-        height="500">
-</canvas>
-
+<!-- Socket.io -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
 
