@@ -1,123 +1,124 @@
 const socket = io();
 
-// ---------------- UI ----------------
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const chat = document.getElementById("chat");
-const msg = document.getElementById("msg");
-const playersDiv = document.getElementById("players");
-const wordBox = document.getElementById("wordBox");
+canvas.width = 500;
+canvas.height = 400;
 
-// Resize canvas properly
-function resizeCanvas() {
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-// ---------------- USER ----------------
-let name = prompt("Enter your name:");
-if (!name) name = "Player";
-
-socket.emit("joinGame", name);
-
-// ---------------- DRAWING ----------------
 let drawing = false;
 
-canvas.addEventListener("mousedown", startDraw);
-canvas.addEventListener("mouseup", stopDraw);
-canvas.addEventListener("mousemove", draw);
+/**
+ * JOIN GAME
+ */
+function joinGame() {
+  const name = document.getElementById("nameInput").value;
+  socket.emit("joinGame", name);
+}
 
-// mobile touch support
+/**
+ * START BUTTON
+ */
+document.getElementById("startBtn").addEventListener("click", () => {
+  socket.emit("startRound");
+});
+
+/**
+ * DRAWING
+ */
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDraw);
+
 canvas.addEventListener("touchstart", startDraw);
+canvas.addEventListener("touchmove", draw);
 canvas.addEventListener("touchend", stopDraw);
-canvas.addEventListener("touchmove", drawTouch);
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  if (e.touches) {
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  }
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
 
 function startDraw(e) {
   drawing = true;
+  const pos = getPos(e);
   ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+}
+
+function draw(e) {
+  if (!drawing) return;
+
+  const pos = getPos(e);
+
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+
+  socket.emit("draw", pos);
 }
 
 function stopDraw() {
   drawing = false;
 }
 
-function draw(e) {
-  if (!drawing) return;
-
-  ctx.lineWidth = 3;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "black";
-
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
-
-  socket.emit("draw", {
-    x: e.offsetX / canvas.width,
-    y: e.offsetY / canvas.height
-  });
-}
-
-function drawTouch(e) {
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-
-  ctx.lineTo(x, y);
-  ctx.stroke();
-
-  socket.emit("draw", {
-    x: x / canvas.width,
-    y: y / canvas.height
-  });
-}
-
-// ---------------- RECEIVE DRAW ----------------
+/**
+ * RECEIVE DRAWING
+ */
 socket.on("draw", (data) => {
-  ctx.lineWidth = 3;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "black";
-
-  ctx.lineTo(data.x * canvas.width, data.y * canvas.height);
+  ctx.lineTo(data.x, data.y);
   ctx.stroke();
 });
 
-// ---------------- CHAT ----------------
-function sendGuess() {
-  const text = msg.value;
-  if (!text) return;
-
-  socket.emit("guess", text);
-  msg.value = "";
-}
-
-socket.on("chat", (msg) => {
-  const div = document.createElement("div");
-  div.textContent = msg;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-});
-
-// ---------------- PLAYERS ----------------
-socket.on("players", (list) => {
-  playersDiv.innerHTML = list.map(p => `<div>${p}</div>`).join("");
-});
-
-// ---------------- WORD ----------------
-socket.on("word", (w) => {
-  wordBox.textContent = "Draw: " + w;
-});
-
-// ---------------- ACTIONS ----------------
-function requestWord() {
-  const socket = io();
-}
-
-function clearCanvas() {
+/**
+ * CLEAR CANVAS
+ */
+socket.on("clearCanvas", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  socket.emit("clear");
+});
+
+/**
+ * SYNC CANVAS (optional future use)
+ */
+socket.on("syncCanvas", (data) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+/**
+ * CHAT / SYSTEM
+ */
+socket.on("systemMessage", (msg) => {
+  const div = document.getElementById("chat");
+  div.innerHTML += `<div>${msg}</div>`;
+});
+
+/**
+ * PLAYER LIST
+ */
+socket.on("playerList", (players) => {
+  document.getElementById("players").innerText =
+    "Players: " + players.map(p => p.name).join(", ");
+});
+
+/**
+ * YOUR TURN
+ */
+socket.on("yourTurn", (data) => {
+  alert("You are drawing: " + data.word);
+});
+
+/**
+ * GUESS
+ */
+function sendGuess() {
+  const text = document.getElementById("guessInput").value;
+  socket.emit("guess", text);
 }
