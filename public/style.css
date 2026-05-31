@@ -11,7 +11,13 @@ body {
   color: white;
   min-height: 100vh;
 }
-
+#wordBox {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin: 10px;
+  color: #333;
+}
 /* Header */
 header {
   padding: 15px;
