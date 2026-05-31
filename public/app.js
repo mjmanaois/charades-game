@@ -9,7 +9,7 @@ canvas.height = 400;
 let drawing = false;
 
 /**
- * JOIN GAME
+ * JOIN
  */
 function joinGame() {
   const name = document.getElementById("nameInput").value;
@@ -17,11 +17,11 @@ function joinGame() {
 }
 
 /**
- * START BUTTON
+ * START GAME
  */
-document.getElementById("startBtn").addEventListener("click", () => {
-  socket.emit("startRound");
-});
+function startGame() {
+  socket.emit("startGame");
+}
 
 /**
  * DRAWING
@@ -34,36 +34,36 @@ canvas.addEventListener("touchstart", startDraw);
 canvas.addEventListener("touchmove", draw);
 canvas.addEventListener("touchend", stopDraw);
 
-function getPos(e) {
-  const rect = canvas.getBoundingClientRect();
+function pos(e) {
+  const r = canvas.getBoundingClientRect();
   if (e.touches) {
     return {
-      x: e.touches[0].clientX - rect.left,
-      y: e.touches[0].clientY - rect.top
+      x: e.touches[0].clientX - r.left,
+      y: e.touches[0].clientY - r.top
     };
   }
   return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    x: e.clientX - r.left,
+    y: e.clientY - r.top
   };
 }
 
 function startDraw(e) {
   drawing = true;
-  const pos = getPos(e);
+  const p = pos(e);
   ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
+  ctx.moveTo(p.x, p.y);
 }
 
 function draw(e) {
   if (!drawing) return;
 
-  const pos = getPos(e);
+  const p = pos(e);
 
-  ctx.lineTo(pos.x, pos.y);
+  ctx.lineTo(p.x, p.y);
   ctx.stroke();
 
-  socket.emit("draw", pos);
+  socket.emit("draw", p);
 }
 
 function stopDraw() {
@@ -71,7 +71,7 @@ function stopDraw() {
 }
 
 /**
- * RECEIVE DRAWING
+ * RECEIVE DRAW
  */
 socket.on("draw", (data) => {
   ctx.lineTo(data.x, data.y);
@@ -79,40 +79,37 @@ socket.on("draw", (data) => {
 });
 
 /**
- * CLEAR CANVAS
+ * CLEAR
  */
 socket.on("clearCanvas", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
 
 /**
- * SYNC CANVAS (optional future use)
+ * TURN INFO
  */
-socket.on("syncCanvas", (data) => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+socket.on("yourTurn", (data) => {
+  if (data.role === "drawer") {
+    alert("You are DRAWER: " + data.word);
+  } else {
+    alert(data.message);
+  }
 });
 
 /**
- * CHAT / SYSTEM
+ * CHAT
  */
 socket.on("systemMessage", (msg) => {
-  const div = document.getElementById("chat");
-  div.innerHTML += `<div>${msg}</div>`;
+  const chat = document.getElementById("chat");
+  chat.innerHTML += `<div>${msg}</div>`;
 });
 
 /**
- * PLAYER LIST
+ * PLAYERS
  */
 socket.on("playerList", (players) => {
   document.getElementById("players").innerText =
     "Players: " + players.map(p => p.name).join(", ");
-});
-
-/**
- * YOUR TURN
- */
-socket.on("yourTurn", (data) => {
-  alert("You are drawing: " + data.word);
 });
 
 /**
