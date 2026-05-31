@@ -6,78 +6,49 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve frontend
 app.use(express.static("public"));
 
-// Store players
 let players = [];
+let currentWord = "";
 
-// Word list for charades
-const words = [
-  "apple",
-  "bicycle",
-  "teacher",
-  "dancing",
-  "basketball",
-  "airplane",
-  "guitar",
-  "phone",
-  "sleeping",
-  "running"
-];
+const words = ["apple", "dog", "car", "house", "bicycle", "tree"];
 
-// ----------------------
-// Socket.io connection
-// ----------------------
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
 
-  // Join game
   socket.on("joinGame", (name) => {
-    socket.username = name;
-
+    socket.name = name;
     players.push(name);
-
-    io.emit("playersUpdate", players);
-    io.emit("chatMessage", `🎉 ${name} joined the game`);
+    io.emit("players", players);
   });
 
-  // Chat system
-  socket.on("chatMessage", (msg) => {
-    io.emit("chatMessage", msg);
+  socket.on("newRound", () => {
+    currentWord = words[Math.floor(Math.random() * words.length)];
+
+    socket.emit("word", currentWord); // only drawer sees word
+    io.emit("chat", "🎮 New round started!");
   });
 
-  // Get random word
-  socket.on("getWord", () => {
-    const word = words[Math.floor(Math.random() * words.length)];
-
-    // send only to requester (important for charades)
-    socket.emit("newWord", word);
+  socket.on("draw", (data) => {
+    socket.broadcast.emit("draw", data);
   });
 
-  // Start game
-  socket.on("startGame", () => {
-    io.emit("chatMessage", "🎮 Game has started!");
-  });
-
-  // Disconnect
-  socket.on("disconnect", () => {
-    if (socket.username) {
-      players = players.filter((p) => p !== socket.username);
-
-      io.emit("playersUpdate", players);
-      io.emit("chatMessage", `❌ ${socket.username} left the game`);
+  socket.on("guess", (text) => {
+    if (text.toLowerCase() === currentWord) {
+      io.emit("chat", `🏆 ${socket.name} guessed the word!`);
+    } else {
+      io.emit("chat", `${socket.name}: ${text}`);
     }
+  });
 
-    console.log("User disconnected:", socket.id);
+  socket.on("clear", () => {
+    socket.broadcast.emit("clear");
+  });
+
+  socket.on("disconnect", () => {
+    players = players.filter(p => p !== socket.name);
+    io.emit("players", players);
   });
 });
 
-// ----------------------
-// Port setup (IMPORTANT for Render)
-// ----------------------
 const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log("Running on", PORT));
