@@ -1,54 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Charades Draw & Guess</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Charades Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      text-align: center;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      border: 2px solid black;
+      touch-action: none;
+    }
+
+    #players {
+      margin: 10px;
+    }
+
+    #chat {
+      height: 100px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      width: 90%;
+      margin: 10px auto;
+    }
+
+    input {
+      padding: 8px;
+      width: 70%;
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px;
+    }
+
+    @media (max-width: 600px) {
+      canvas {
+        width: 95%;
+        height: 300px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-  🎭 Draw & Guess Charades
-</header>
+<h2>🎮 Charades Game</h2>
 
-<div class="layout">
+<div id="container">
 
-  <!-- LEFT: CANVAS -->
-  <div class="panel">
-    <div class="card">
-      <h3>Drawing Area</h3>
-      <canvas id="canvas"></canvas>
+  <input id="nameInput" placeholder="Enter name">
+  <button onclick="joinGame()">Join Game</button>
 
-      <div class="toolbar">
-        <button onclick="clearCanvas()" class="btn-danger">Clear</button>
-        <button onclick="requestWord()" class="btn-primary">Start Round</button>
-      </div>
+  <div id="players"></div>
 
-      <div id="wordBox" class="word-box">Waiting for word...</div>
-    </div>
-  </div>
+  <button id="startBtn">Start Round</button>
 
-  <!-- RIGHT: CHAT + PLAYERS -->
-  <div class="panel">
+  <canvas id="canvas"></canvas>
 
-    <div class="card">
-      <h3>Players</h3>
-      <div id="players"></div>
-    </div>
+  <input id="guessInput" placeholder="Type your guess">
+  <button onclick="sendGuess()">Guess</button>
 
-    <div class="card">
-      <h3>Chat / Guess</h3>
-
-      <div id="chat" class="chat"></div>
-
-      <input id="msg" placeholder="Guess the word..." />
-      <button onclick="sendGuess()" class="btn-secondary">Send</button>
-    </div>
-
-  </div>
-
+  <div id="chat"></div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
