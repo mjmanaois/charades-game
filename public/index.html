@@ -3,36 +3,11 @@
 <head>
   <title>2-Player Charades</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-    }
-
-    canvas {
-      border: 2px solid black;
-      touch-action: none;
-    }
-
-    #chat {
-      height: 120px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      margin: 10px auto;
-      width: 90%;
-    }
-
-    input, button {
-      padding: 10px;
-      margin: 5px;
-    }
-  </style>
 </head>
 
 <body>
 
-<h2>🎮 2-Player Charades</h2>
+<div id="wordBox"></div>
 
 <input id="nameInput" placeholder="Enter name">
 <button onclick="joinGame()">Join</button>
