@@ -114,7 +114,7 @@ socket.on("word", (w) => {
 
 // ---------------- ACTIONS ----------------
 function requestWord() {
-  socket.emit("newRound");
+  const socket = io();
 }
 
 function clearCanvas() {
