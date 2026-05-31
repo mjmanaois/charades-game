@@ -3,45 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Charades Game</title>
+  <title>Charades Draw & Guess</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
 <header>
-  🎭 Charades Game
+  🎭 Draw & Guess Charades
 </header>
 
-<div class="container">
+<div class="layout">
 
-  <!-- Word Section -->
-  <div class="card">
-    <div class="word-box" id="word">Waiting for word...</div>
+  <!-- LEFT: CANVAS -->
+  <div class="panel">
+    <div class="card">
+      <h3>Drawing Area</h3>
+      <canvas id="canvas"></canvas>
 
-    <button class="btn-primary" onclick="getWord()">Get Word</button>
-    <button class="btn-secondary" onclick="startGame()">Start Game</button>
+      <div class="toolbar">
+        <button onclick="clearCanvas()" class="btn-danger">Clear</button>
+        <button onclick="requestWord()" class="btn-primary">Start Round</button>
+      </div>
+
+      <div id="wordBox" class="word-box">Waiting for word...</div>
+    </div>
   </div>
 
-  <!-- Players -->
-  <div class="card">
-    <h3>Players</h3>
-    <div id="players" class="players"></div>
-  </div>
+  <!-- RIGHT: CHAT + PLAYERS -->
+  <div class="panel">
 
-  <!-- Chat -->
-  <div class="card">
-    <h3>Chat</h3>
+    <div class="card">
+      <h3>Players</h3>
+      <div id="players"></div>
+    </div>
 
-    <div id="chat" class="chat-box"></div>
+    <div class="card">
+      <h3>Chat / Guess</h3>
 
-    <input id="msg" placeholder="Type message..." />
-    <button class="btn-secondary" onclick="sendMessage()">Send</button>
+      <div id="chat" class="chat"></div>
+
+      <input id="msg" placeholder="Guess the word..." />
+      <button onclick="sendGuess()" class="btn-secondary">Send</button>
+    </div>
+
   </div>
 
 </div>
 
-<!-- Socket.io -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
 
